@@ -39,11 +39,19 @@ namespace HomeIo
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
+            //*** Timer de l'API
             System.Windows.Threading.DispatcherTimer dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
             dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
             dispatcherTimer.Interval = TimeSpan.FromMilliseconds(20);
             dispatcherTimer.Start();
 
+            //*** Timer de la supervision
+            System.Windows.Threading.DispatcherTimer dispatcherTimerSupervision = new System.Windows.Threading.DispatcherTimer();
+            dispatcherTimerSupervision.Tick += new EventHandler(dispatcherTimerSupervision_Tick);
+            dispatcherTimerSupervision.Interval = TimeSpan.FromSeconds(1);
+            dispatcherTimerSupervision.Start();
+
+            //*** Timer de 5s du garage
             dispatcherTimer5s = new System.Windows.Threading.DispatcherTimer();
             dispatcherTimer5s.Tick += new EventHandler(dispatcherTimer5s_Tick);
             dispatcherTimer5s.Interval = TimeSpan.FromSeconds(5);
@@ -58,12 +66,31 @@ namespace HomeIo
             x2v = false;
 
             this.lampe = MemoryMap.Instance.GetBit(0, MemoryType.Output);
+        }
 
+        private void dispatcherTimerSupervision_Tick(object sender, EventArgs e)
+        {
+            MemoryMap.Instance.Update();
+
+
+
+            bool presenceA = MemoryMap.Instance.GetBit(15, MemoryType.Input).Value;
+
+            if (presenceA)
+            {
+                presence_A.Content = "Présence dans la pièce A";
+            } else
+            {
+                presence_A.Content = "Pièce A vide";
+            }
+
+            //mise à jour après des opérations sur l'interface
+            MemoryMap.Instance.Update();
         }
 
         private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
-           // System.Diagnostics.Debug.WriteLine("tick");
+            System.Diagnostics.Debug.WriteLine("tick");
             MemoryMap.Instance.Update();
             this.runCycleApi();
             this.runCycleVolet();
@@ -78,7 +105,6 @@ namespace HomeIo
             this.dispatcherTimer5s.Stop();
             timerRun = false;
         }
-
 
         bool ft1g;
         bool ft2g;
@@ -108,7 +134,7 @@ namespace HomeIo
         {
 
             bp1Prec = bp1;
-            
+
             bp1 = MemoryMap.Instance.GetBit(274, MemoryType.Input).Value;
             porteOuverte = MemoryMap.Instance.GetBit(100, MemoryType.Input).Value;
             porteFermee = MemoryMap.Instance.GetBit(101, MemoryType.Input).Value;
@@ -152,11 +178,10 @@ namespace HomeIo
 
         }
 
-
         private void runCycleApi()
         {
             //mise à jour HomeIO
-           
+
 
             bpPrec = this.bp;
             //lecture des entrées
@@ -175,7 +200,7 @@ namespace HomeIo
             lampe.Value = X2;
 
             //mise à jour HomeIO
-            
+
         }
 
         bool ft1v;
@@ -213,7 +238,7 @@ namespace HomeIo
 
             voletHaut = positionVolet == 10 ? true : false;
             voletBas = positionVolet == 0 ? true : false;
-            
+
             frontMonter = !btnMonterPrec && btnMonter;
             frontDescendre = !btnDescendrePrec && btnDescendre;
 
