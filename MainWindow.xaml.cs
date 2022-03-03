@@ -78,11 +78,22 @@ namespace HomeIo
 
             if (presenceA)
             {
-                presence_A.Content = "Présence dans la pièce A";
+                presence_A.Background = new SolidColorBrush(Colors.Green);
             } else
             {
-                presence_A.Content = "Pièce A vide";
+                presence_A.Background = new SolidColorBrush(Colors.Red);
             }
+
+            //*** Chauffage
+            float mesureA = MemoryMap.Instance.GetFloat(1, MemoryType.Input).Value;
+            float consigneA = MemoryMap.Instance.GetFloat(2, MemoryType.Input).Value;
+            mesure_A.Content = mesureA.ToString();
+            consigne_A_lu.Content = consigneA.ToString();
+
+            //**** Simu
+
+            date_simu.Content = MemoryMap.Instance.GetDateTime(65, MemoryType.Memory).Value.ToString();
+            temp_simu.Content = (MemoryMap.Instance.GetFloat(132, MemoryType.Memory).Value -272.15).ToString("F") + "°C";
 
             //mise à jour après des opérations sur l'interface
             MemoryMap.Instance.Update();
@@ -102,7 +113,7 @@ namespace HomeIo
         {
             System.Diagnostics.Debug.WriteLine("tick 5 secondes");
             timerTermine = true;
-            this.dispatcherTimer5s.Stop();
+            dispatcherTimer5s.Stop();
             timerRun = false;
         }
 
@@ -155,15 +166,6 @@ namespace HomeIo
             x4g = ft3g || x4g && !ft4g;
             x5g = ft4g || x5g && !(ft5g || ft6g);
 
-            System.Diagnostics.Debug.WriteLine("****");
-            System.Diagnostics.Debug.WriteLine("ft5g " + ft5g);
-            System.Diagnostics.Debug.WriteLine("ft6g " + ft6g);
-            System.Diagnostics.Debug.WriteLine(x1g);
-            System.Diagnostics.Debug.WriteLine(x2g);
-            System.Diagnostics.Debug.WriteLine(x3g);
-            System.Diagnostics.Debug.WriteLine(x4g);
-            System.Diagnostics.Debug.WriteLine("x5g " + x5g);
-
             ouvrirPorte = MemoryMap.Instance.GetBit(72, MemoryType.Output);
             fermerPorte = MemoryMap.Instance.GetBit(73, MemoryType.Output);
 
@@ -173,7 +175,14 @@ namespace HomeIo
             if (x3g == true && timerRun == false)
             {
                 timerRun = true;
-                this.dispatcherTimer5s.Start();
+                dispatcherTimer5s.Start();
+            }
+
+            if (x3g == false)
+            {
+                timerRun = false;
+                timerTermine = false;
+                dispatcherTimer5s.Stop();
             }
 
         }
@@ -260,6 +269,12 @@ namespace HomeIo
             monter.Value = x2v;
             descendre.Value = x1v;
 
+        }
+
+        private void consigne_A_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            MemoryFloat heaterA = MemoryMap.Instance.GetFloat(1, MemoryType.Output);
+            heaterA.Value = float.Parse(consigne_A.Text);
         }
     }
 }
